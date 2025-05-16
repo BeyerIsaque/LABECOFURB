@@ -1,0 +1,234 @@
+---
+title: "Isaque Beyer"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: load-packages # nomes únicos
+#| include: false # não inclui o resultado no doc
+
+library(tidyverse) # pacote ggplot2 (gráficos)
+library(WDI) # pacote dos dados
+library(countrycode) #pacote com os códigos dos paises
+
+options(scipen = 999)
+
+# BASE DE DADOS #
+# DADOS EM PAINEL
+x <- WDI(country = 'all', indicator = 'IS.AIR.PSGR')
+
+# CORTE TRANSVERSAL
+xx <- WDI(country = 'all',
+                      indicator = 'MS.MIL.TOTL.P1',
+                      start = 2020, end = 2020)
+
+# SERIE TEMPORAL
+xxx <- WDI(country = 'CHN',
+                       indicator = 'AG.PRD.CREL.MT')
+
+```
+
+## VARIÁVEIS
+
+Apresenta 3 variáveis diferentes entre elas temos:
+
+**PIB per capita**
+
+A variável PIB per capita representa o Produto Interno Bruto dividido pela população de um país, sendo uma medida que indica a média de renda por habitante. Esse indicador é essencial para avaliar o padrão de vida de uma população, o desenvolvimento econômico de uma nação e as desigualdades entre diferentes regiões. Em contextos gerais, o PIB per capita é amplamente utilizado em análises comparativas de bem-estar econômico e qualidade de vida entre países.
+
+**Taxa de Desemprego em 2023**
+
+A taxa de desemprego em 2023 refere-se à proporção da população economicamente ativa que estava sem trabalho e procurando emprego nesse ano específico. Esse indicador é crucial para entender a situação do mercado de trabalho de um país, refletindo diretamente a saúde da economia. Altas taxas de desemprego podem indicar crises econômicas ou dificuldades estruturais, enquanto taxas mais baixas geralmente estão associadas a economias em expansão.
+
+**Crescimento do PIB**
+
+A variável Crescimento do PIB indica a variação percentual do Produto Interno Bruto de um país de um ano para o outro, ajustado a preços constantes. Esse indicador mede a dinâmica da atividade econômica e o ritmo de expansão ou retração da economia. Em contextos gerais, o crescimento do PIB é utilizado para monitorar ciclos econômicos, orientar políticas econômicas e comparar o desempenho entre diferentes países ao longo do tempo.
+
+### GRÁFICO DE DADOS EM PAINEL
+
+Um gráfico de dados em painel é empregado para exibir informações que envolvem duas ou mais dimensões ao longo do tempo. Esse tipo de gráfico permite observar a evolução de diferentes países em relação a uma variável específica durante vários anos.
+
+Além disso, o gráfico facilita a comparação entre países, permitindo identificar padrões, como crescimento econômico consistente, recessões, estabilidade ou choques pontuais.
+
+Neste gráfico analisamos o **crescimento do PIB** de diversos países entre 2000 e 2023. O Brasil está destacado com a cor laranja e os Estados Unidos em azul, permitindo observar com clareza suas trajetórias econômicas ao longo das últimas décadas.
+
+### 📊 **Gráfico: PIB per capita**
+
+O gráfico do **PIB per capita** mostra a evolução da renda média por habitante ao longo do tempo em diferentes países. Essa representação permite comparar o desenvolvimento econômico entre as nações e identificar tendências de crescimento ou estagnação.
+
+No gráfico, o Brasil e os Estados Unidos estão destacados com cores distintas (laranja e azul, respectivamente), facilitando a visualização do desempenho relativo entre eles. O PIB per capita é um dos principais indicadores de qualidade de vida, sendo útil para analisar a eficiência econômica, a geração de riqueza e o progresso social em longo prazo.
+
+```{r}
+#| label: dadospib
+#| warning: false
+#| echo: false
+
+# Baixar dados de PIB per capita
+PIB_PER_CAPITA <- WDI(country = 'all', indicator = 'NY.GDP.PCAP.CD')
+
+# Adiciona uma coluna com rótulo dos países destacados
+PIB_PER_CAPITA <- PIB_PER_CAPITA %>%
+  mutate(grupo = case_when(
+    iso2c == "BR" ~ "Brasil",
+    iso2c == "US" ~ "Estados Unidos",
+    TRUE ~ "Outros"
+  ))
+
+# Paleta de cores personalizada
+cores <- c("Brasil" = "#00b159", "Estados Unidos" = "#1f77b4", "Outros" = "grey80")
+
+# Gráfico com estilo escuro padronizado
+grafpainel_pib <- ggplot(PIB_PER_CAPITA, aes(x = year, y = NY.GDP.PCAP.CD, group = iso2c)) +
+  
+  # Linhas para outros países
+  geom_line(data = subset(PIB_PER_CAPITA, grupo == "Outros"),
+            color = "grey60", alpha = 0.3, size = 0.5) +
+  
+  # Linhas destacadas para Brasil e EUA
+  geom_line(data = subset(PIB_PER_CAPITA, grupo != "Outros"),
+            aes(color = grupo),
+            size = 1.5) +
+  
+  # Pontos destacados
+  geom_point(data = subset(PIB_PER_CAPITA, grupo != "Outros"),
+             aes(color = grupo),
+             size = 3) +
+  
+  # Títulos e legendas
+  labs(
+    title = "🌍 PIB per Capita ao Longo dos Anos",
+    subtitle = "Evolução histórica comparada: Brasil, EUA e demais países",
+    x = "Ano",
+    y = "PIB per Capita (USD)",
+    color = "País"
+  ) +
+  
+  scale_color_manual(values = cores) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.background = element_rect(fill = "#121212", color = NA),
+    panel.background = element_rect(fill = "#121212", color = NA),
+    panel.grid.major = element_line(color = "#444444"),
+    panel.grid.minor = element_line(color = "#444444"),
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5, color = "white"),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "white"),
+    axis.title = element_text(color = "white"),
+    axis.text = element_text(color = "white"),
+    legend.title = element_text(color = "white"),
+    legend.text = element_text(color = "white"),
+    legend.position = "bottom"
+  )
+
+# Exibir o gráfico
+print(grafpainel_pib)
+```
+
+## GRÁFICO CORTE TRANSVERSAL
+
+Um gráfico de dados de corte transversal é usado para apresentar informações de vários elementos (como países, estados ou regiões) em um único momento no tempo.
+
+### 📈 **Gráfico: Taxa de Desemprego em 2023**
+
+Este gráfico apresenta a **taxa de desemprego** dos países selecionados no ano de 2023. A taxa de desemprego é um dos principais indicadores do mercado de trabalho e revela a proporção da população economicamente ativa que está sem emprego, mas buscando colocação.
+
+A comparação entre os países permite entender quais economias estavam com maior pressão sobre o emprego e quais apresentavam mercados de trabalho mais estáveis nesse ano específico. A visualização destaca o Brasil e os Estados Unidos para facilitar a análise comparativa entre eles.
+
+```{r}
+#| label: cortetransversal_desemprego_2023
+#| warning: false
+#| echo: false
+
+library(ggplot2)
+library(dplyr)
+
+# Dados reais de taxa de desemprego em 2023
+dados_desemprego <- tibble::tibble(
+  pais = c("Brasil", "Estados Unidos", "Alemanha", "França", "Índia", "China", "Japão", "África do Sul", "Argentina", "México"),
+  taxa_desemprego = c(7.0, 4.2, 3.0, 7.2, 7.9, 5.2, 2.5, 33.0, 6.4, 2.2)
+)
+
+# Gráfico com estilo visual padronizado (fundo escuro, texto claro)
+ggplot(dados_desemprego, aes(x = reorder(pais, taxa_desemprego), y = taxa_desemprego, fill = pais)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip() +
+  labs(
+    title = "📊 Taxa de Desemprego em 2023",
+    x = "País",
+    y = "Taxa de Desemprego (%)",
+    caption = "Fonte: Trading Economics"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.background = element_rect(fill = "#121212", color = NA),
+    panel.background = element_rect(fill = "#121212", color = NA),
+    panel.grid.major = element_line(color = "#444444"),
+    panel.grid.minor = element_line(color = "#444444"),
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5, color = "white"),
+    axis.title = element_text(color = "white"),
+    axis.text = element_text(color = "white"),
+    plot.caption = element_text(color = "white")
+  ) +
+  scale_fill_manual(values = rep("#1f77b4", nrow(dados_desemprego)))
+```
+
+## GRÁFICO SÉRIE TEMPORAL
+
+O gráfico de dados de série temporal é utilizado para acompanhar o desenvolvimento de uma única variável ao longo dos anos. Esse tipo de gráfico permite observar como uma variável se altera ao longo de diferentes períodos, ajudando a identificar tendências, ciclos e variações sazonais.
+
+### 📉 **Gráfico: Crescimento do PIB (2000–2023)**
+
+O gráfico de **Crescimento do PIB** em painel exibe a variação percentual anual do Produto Interno Bruto, ajustado a preços constantes, de diversos países entre os anos de 2000 e 2023.
+
+Esse tipo de gráfico permite observar os ciclos econômicos, crises, períodos de aceleração e recuperação de cada país ao longo do tempo. O Brasil (em laranja) e os Estados Unidos (em azul) são destacados para evidenciar suas trajetórias de crescimento, facilitando a comparação com outras grandes economias, como China, Índia e Alemanha.
+
+```{r}
+#| label: serietemporal
+#| warning: false 
+#| echo: false    
+
+# Dados de crescimento do PIB
+paises_interesse <- c("USA", "BRA", "CHN", "DEU", "IND")
+CRESCIMENTO_PIB <- WDI(country = paises_interesse, indicator = 'NY.GDP.MKTP.KD.ZG')
+
+# Filtrar a partir do ano 2000
+CRESCIMENTO_PIB <- CRESCIMENTO_PIB[CRESCIMENTO_PIB$year >= 2000, ]
+
+ggplot(CRESCIMENTO_PIB, aes(x = year, y = NY.GDP.MKTP.KD.ZG, color = country)) +
+  
+  # Linhas de cada país
+  geom_line(size = 2) +
+  
+  # Pontos para destacar valores
+  geom_point(size = 3) +
+  
+  # Títulos e eixos personalizados
+  labs(
+    title = "📈 Crescimento do PIB",
+    subtitle = "Taxa de Crescimento do PIB a Preços Constantes (2000-2023)",
+    x = "Ano",
+    y = "Crescimento do PIB (%)",
+    color = "País"
+  ) +
+  
+  # Escala de anos de 10 em 10
+  scale_x_continuous(breaks = seq(2000, 2023, by = 10)) +
+  
+  # Tema escuro moderno
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.background = element_rect(fill = "#121212", color = NA),
+    panel.background = element_rect(fill = "#121212", color = NA),
+    panel.grid.major = element_line(color = "#444444"),
+    panel.grid.minor = element_line(color = "#444444"),
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5, color = "white"),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, color = "white"),
+    axis.title = element_text(color = "white"),
+    axis.text = element_text(color = "white"),
+    legend.title = element_text(color = "white"),
+    legend.text = element_text(color = "white")
+  )
+
+
+```
