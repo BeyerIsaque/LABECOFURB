@@ -1,0 +1,99 @@
+### 📊 Rentabilidade da Poupança no Brasil (1967–2012)
+
+A rentabilidade da poupança é um importante indicador do retorno obtido por investidores na aplicação mais tradicional do país. A série histórica da rentabilidade mensal permite acompanhar a evolução dos rendimentos ao longo de várias décadas, refletindo mudanças nas políticas monetárias, inflação e contexto econômico.
+
+```{r}
+#| label: poupanca-plotly
+#| warning: false
+#| echo: false
+
+# Instalar e carregar pacotes
+if (!require("GetBCBData")) install.packages("GetBCBData")
+if (!require("tidyverse")) install.packages("tidyverse")
+if (!require("plotly")) install.packages("plotly")
+
+library(GetBCBData)
+library(tidyverse)
+library(plotly)
+
+# Coleta dos dados
+my.id <- c(poupanca = 7828)
+
+df.poup <- gbcbd_get_series(id = my.id,
+                            first.date = '1967-01-01',
+                            last.date = '2012-05-03',
+                            format.data = 'long') %>%
+  filter(!is.na(value)) %>%
+  arrange(ref.date) %>%
+  mutate(ref.date = as.Date(ref.date),
+         frame = row_number())
+
+# Preparar dados para animação acumulativa
+df_anim <- map_dfr(1:nrow(df.poup), function(i) {
+  df.poup[1:i, ] %>% mutate(frame_id = i)
+})
+
+# Definir ticks do eixo X de 10 em 10 anos
+anos_ticks <- seq(from = as.Date("1970-01-01"),
+                  to = as.Date("2010-01-01"),
+                  by = "10 years")
+
+x_range <- range(df.poup$ref.date)
+y_range <- range(df.poup$value)
+
+# Criar gráfico animado
+p <- plot_ly(
+  data = df_anim,
+  x = ~ref.date,
+  y = ~value,
+  frame = ~frame_id,
+  type = 'scatter',
+  mode = 'lines',
+  line = list(color = "#00FFFF", width = 2),
+  fill = 'tozeroy',
+  fillcolor = 'rgba(31,119,180,0.3)'
+) %>%
+  layout(
+    title = "📈 Rentabilidade da Poupança no Brasil",
+    margin = list(b = 80),  # aumenta margem inferior para título "Ano"
+    xaxis = list(
+      title = "Ano",
+      color = "white",
+      type = "date",
+      tickformat = "%Y",
+      tickvals = anos_ticks,
+      range = c(x_range[1], x_range[2])
+    ),
+    yaxis = list(
+      title = "Rentabilidade mensal (%)",
+      color = "white",
+      range = c(y_range[1], y_range[2])
+    ),
+    plot_bgcolor = "#0f0f0f",
+    paper_bgcolor = "#0f0f0f",
+    font = list(color = "white")
+  ) %>%
+  animation_opts(frame = 50, transition = 0, redraw = FALSE) %>%
+  animation_slider(
+    currentvalue = list(visible = FALSE),
+    ticks = FALSE
+  ) %>%
+  animation_button()
+
+p
+
+```
+
+# Interpretação histórica dos picos e quedas
+
+A análise da rentabilidade mensal da poupança no Brasil entre 1967 e 2012 revela variações intensas, diretamente associadas a momentos econômicos marcantes:
+
+-   **Anos 1980 - Crise da dívida e hiperinflação:** A alta volatilidade e alguns picos refletem as tentativas do governo brasileiro de controlar a inflação alta, que chegou a níveis exorbitantes, impactando os juros e a rentabilidade real da poupança.
+
+-   **Planos econômicos e estabilização:** Os sucessivos planos econômicos, como o Plano Cruzado (1986), Plano Bresser (1987) e Plano Real (1994), afetaram diretamente a rentabilidade da poupança. No período do Plano Real, observa-se maior estabilidade e valorização real, com queda da inflação.
+
+-   **Taxa Selic e política monetária:** A rentabilidade da poupança acompanha as mudanças na taxa básica de juros (Selic). Durante períodos em que a Selic esteve elevada para conter a inflação, a poupança teve rentabilidade maior; em períodos de juros baixos, a rentabilidade também caiu.
+
+-   **Crises internacionais:** Episódios como a crise do petróleo nos anos 1970 e a crise financeira internacional de 2008 também impactaram a economia brasileira e, consequentemente, a rentabilidade da poupança, gerando oscilações no gráfico.
+
+Esses movimentos refletem a complexa interação entre política econômica, inflação, taxa de juros e confiança do mercado, que moldaram o comportamento da poupança ao longo das décadas.
